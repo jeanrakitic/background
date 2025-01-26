@@ -40,12 +40,13 @@ class ImageProcessor:
 
         # Threshold types
         self.threshold_types = {
+            "Binary": cv2.THRESH_BINARY,
             "Binary Inverted": cv2.THRESH_BINARY_INV,
             "Binary Thresholding": cv2.THRESH_BINARY,
             "Truncate": cv2.THRESH_TRUNC+cv2.THRESH_BINARY,
             "To Zero": cv2.THRESH_TOZERO,
             "To Zero Inverted": cv2.THRESH_TOZERO_INV,
-            "Otsu" : cv2.THRESH_OTSU+cv2.THRESH_BINARY,
+            "Otsu" : cv2.THRESH_OTSU,
             "Adaptive":cv2.ADAPTIVE_THRESH_MEAN_C+cv2.THRESH_BINARY
         }
         self.current_threshold_type = tk.StringVar(value="Binary")
@@ -232,14 +233,33 @@ class ImageProcessor:
 
     def save_image(self):
         if self.processed_image is None:
+            messagebox.showerror("Error", "No processed image to save! Please process an image first.")
             return
-            
+    
+        # Open file dialog to save the image
         file_path = filedialog.asksaveasfilename(
             defaultextension=".png",
             filetypes=[("PNG files", "*.png"), ("JPEG files", "*.jpg"), ("All files", "*.*")]
         )
         if file_path:
-            cv2.imwrite(file_path, self.processed_image)
+            try:
+                # Check if processed_image is a PIL.Image or a NumPy array
+                if isinstance(self.processed_image, np.ndarray):
+                    # Save directly if it's a NumPy array
+                    cv2.imwrite(file_path, self.processed_image)
+                elif isinstance(self.processed_image, Image.Image):
+                    # Convert to NumPy array (if it's a PIL.Image) and save
+                    processed_image_np = np.array(self.processed_image)
+                    processed_image_np = cv2.cvtColor(processed_image_np, cv2.COLOR_RGB2BGR)
+                    cv2.imwrite(file_path, processed_image_np)
+                else:
+                    messagebox.showerror("Error", "Processed image format not recognized!")
+                    return
+    
+                messagebox.showinfo("Success", f"Image successfully saved at {file_path}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to save the image: {str(e)}")
+
     
 
     
